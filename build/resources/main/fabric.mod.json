@@ -1,0 +1,29 @@
+{
+    "schemaVersion": 1,
+    "id": "keeper",
+    "version": "1.0.0",
+    "name": "Keeper",
+    "description": "Automated spawner defense system for threat detection and spawner protection.",
+    "authors": [
+        "Team Arctorian"
+    ],
+    "contact": {
+        "homepage": "https://arctorian.com",
+        "sources": "https://github.com/arctorian/keeper"
+    },
+    "license": "Apache-2.0",
+    "icon": "assets/keeper/icon.png",
+    "environment": "client",
+    "entrypoints": {
+        "client": [
+            "com.example.spawnerdefensebot.SpawnerDefenseBot"
+        ]
+    },
+    "mixins": [],
+    "depends": {
+        "fabricloader": ">=0.16.0",
+        "fabric-api": "*",
+        "minecraft": "~1.21.8",
+        "java": ">=21"
+    }
+}
