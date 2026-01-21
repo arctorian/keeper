@@ -1,4 +1,4 @@
-package com.example.spawnerdefensebot;
+package com.example.keeper;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -6,11 +6,11 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
 public class ConfirmStopScreen extends Screen {
-    private final SpawnerDefenseBot bot;
+    private final Keeper bot;
     private final long openTime;
     private static final int TIMEOUT_MS = 5000;
 
-    public ConfirmStopScreen(SpawnerDefenseBot bot) {
+    public ConfirmStopScreen(Keeper bot) {
         super(Text.literal("Confirm Disable Defense"));
         this.bot = bot;
         this.openTime = System.currentTimeMillis();

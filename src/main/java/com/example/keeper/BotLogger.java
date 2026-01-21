@@ -1,4 +1,4 @@
-package com.example.spawnerdefensebot;
+package com.example.keeper;
 
 import net.fabricmc.loader.api.FabricLoader;
 

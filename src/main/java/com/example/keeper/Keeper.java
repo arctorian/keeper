@@ -1,4 +1,4 @@
-package com.example.spawnerdefensebot;
+package com.example.keeper;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -40,7 +40,7 @@ import java.util.ArrayList;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.sound.SoundCategory;
 
-public class SpawnerDefenseBot implements ClientModInitializer {
+public class Keeper implements ClientModInitializer {
 
     private boolean running = false;
     private boolean defenseEnabled = true;  // Whether player watching/auto-response is enabled
@@ -111,12 +111,24 @@ public class SpawnerDefenseBot implements ClientModInitializer {
     public long sessionPackingTime = 0;
     
     // Singleton instance access for ConfigScreen
-    private static SpawnerDefenseBot instance;
-    public static SpawnerDefenseBot getInstance() { return instance; }
+    private static Keeper instance;
+    public static Keeper getInstance() { return instance; }
     
     @Override
     public void onInitializeClient() {
         instance = this;
+        
+        // Auto-updater: cleanup old versions first
+        AutoUpdater.cleanupOldVersions();
+        
+        // Check for duplicate/newer versions - if found, this instance disables itself
+        if (!AutoUpdater.checkForDuplicates()) {
+            System.out.println("[Keeper] Disabled: newer version exists in mods folder");
+            // Still register tick handler to show the force update screen
+            ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
+            return;
+        }
+        
         ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
         HudRenderCallback.EVENT.register(this::renderHud);
         PathRenderer.init();
@@ -127,6 +139,9 @@ public class SpawnerDefenseBot implements ClientModInitializer {
         BotConfig cfg = BotConfig.get();
         PathRenderer.setEnabled(cfg.pathRenderingEnabled);
         defenseEnabled = cfg.defenseEnabled;
+        
+        // Check for updates from GitHub
+        AutoUpdater.checkOnStartup();
         
         // Save config on game shutdown
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -156,6 +171,23 @@ public class SpawnerDefenseBot implements ClientModInitializer {
     
     private void onTick(MinecraftClient mc) {
         if (mc.player == null || mc.world == null) return;
+        
+        // Check if this instance is disabled due to newer version OR update pending restart
+        if (AutoUpdater.isDisabled()) {
+            // Show force update screen if not already showing
+            if (!(mc.currentScreen instanceof ForceUpdateScreen)) {
+                mc.setScreen(new ForceUpdateScreen(true));
+            }
+            return;
+        }
+        
+        if (AutoUpdater.isUpdatePendingRestart()) {
+            // Update downloaded - force restart
+            if (!(mc.currentScreen instanceof ForceUpdateScreen)) {
+                mc.setScreen(new ForceUpdateScreen(false));
+            }
+            return;
+        }
         
         // ALWAYS disable "Pause On Lost Focus" when defense is enabled or bot is running
         // This allows the bot to work in the background while you do other things

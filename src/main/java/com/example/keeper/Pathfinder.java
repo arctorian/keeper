@@ -1,4 +1,4 @@
-package com.example.spawnerdefensebot;
+package com.example.keeper;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.block.BlockState;

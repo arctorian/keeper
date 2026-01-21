@@ -1,4 +1,4 @@
-package com.example.spawnerdefensebot;
+package com.example.keeper;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;

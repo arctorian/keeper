@@ -1,4 +1,4 @@
-package com.example.spawnerdefensebot;
+package com.example.keeper;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -15,9 +15,9 @@ public class KeyBindings {
     private static KeyBinding packUpKey;
     private static KeyBinding configKey;
     
-    private static SpawnerDefenseBot botInstance;
+    private static Keeper botInstance;
     
-    public static void register(SpawnerDefenseBot bot) {
+    public static void register(Keeper bot) {
         botInstance = bot;
         
         toggleBotKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(

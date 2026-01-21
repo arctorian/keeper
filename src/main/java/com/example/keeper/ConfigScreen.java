@@ -1,4 +1,4 @@
-package com.example.spawnerdefensebot;
+package com.example.keeper;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -221,7 +221,7 @@ public class ConfigScreen extends Screen {
                 Section botSection = new Section("Bot Settings");
                 botSection.add(new SettingToggle("Defense Enabled", config.defenseEnabled, v -> {
                     config.defenseEnabled = v;
-                    SpawnerDefenseBot bot = SpawnerDefenseBot.getInstance();
+                    Keeper bot = Keeper.getInstance();
                     if (bot != null) bot.setDefenseEnabled(v);
                 }));
                 botSection.add(new SettingSlider("Search Radius", config.searchRadius, 10, 64, true, v -> config.searchRadius = v.intValue()));
@@ -242,6 +242,12 @@ public class ConfigScreen extends Screen {
                 ghostSection.add(new SettingSlider("Check Delay", config.ghostCheckDelay, 20, 100, true, v -> config.ghostCheckDelay = v.intValue()));
                 ghostSection.add(new SettingSlider("Fix Timeout", config.ghostFixTimeout, 30, 120, true, v -> config.ghostFixTimeout = v.intValue()));
                 sections.add(ghostSection);
+                
+                Section updateSection = new Section("Auto Update");
+                updateSection.add(new SettingToggle("Check On Startup", config.autoUpdateCheck, v -> config.autoUpdateCheck = v));
+                updateSection.add(new SettingToggle("Auto Download", config.autoDownloadUpdates, v -> config.autoDownloadUpdates = v));
+                updateSection.add(new SettingToggle("Show Notifications", config.notifyOnUpdate, v -> config.notifyOnUpdate = v));
+                sections.add(updateSection);
                 break;
                 
             case 1: // HUD
@@ -536,11 +542,49 @@ public class ConfigScreen extends Screen {
         
         y += 20;
         
+        // Update section
+        ctx.drawTextWithShadow(textRenderer, Text.literal("--- Updates ---"), contentX, y, ACCENT_COLOR);
+        y += 12;
+        
+        ctx.drawTextWithShadow(textRenderer, Text.literal("Current: v" + AutoUpdater.getCurrentVersion()), contentX, y, TEXT_GRAY);
+        y += 10;
+        
+        AutoUpdater.UpdateStatus updateStatus = AutoUpdater.getStatus();
+        int statusColor = switch (updateStatus) {
+            case UP_TO_DATE -> 0xFF00AA00;
+            case UPDATE_AVAILABLE, READY_TO_INSTALL -> 0xFFFFAA00;
+            case CHECKING, DOWNLOADING -> 0xFF00AAFF;
+            case ERROR, DISABLED_NEWER_EXISTS -> 0xFFAA0000;
+        };
+        ctx.drawTextWithShadow(textRenderer, Text.literal(AutoUpdater.getStatusMessage()), contentX, y, statusColor);
+        y += 14;
+        
+        // Update action buttons
+        if (updateStatus == AutoUpdater.UpdateStatus.UP_TO_DATE || 
+            updateStatus == AutoUpdater.UpdateStatus.ERROR) {
+            // Check for updates button
+            boolean checkHovered = mouseX >= contentX && mouseX < contentX + 100 && mouseY >= y && mouseY < y + 14;
+            ctx.fill(contentX, y, contentX + 100, y + 14, checkHovered ? ACCENT_HOVER : ACCENT_COLOR);
+            ctx.drawTextWithShadow(textRenderer, Text.literal("Check Updates"), contentX + 10, y + 3, TEXT_COLOR);
+        } else if (updateStatus == AutoUpdater.UpdateStatus.UPDATE_AVAILABLE) {
+            // Download button
+            boolean dlHovered = mouseX >= contentX && mouseX < contentX + 100 && mouseY >= y && mouseY < y + 14;
+            ctx.fill(contentX, y, contentX + 100, y + 14, dlHovered ? 0xFF00CC00 : 0xFF00AA00);
+            ctx.drawTextWithShadow(textRenderer, Text.literal("Download v" + AutoUpdater.getLatestVersion()), contentX + 6, y + 3, TEXT_COLOR);
+        } else if (updateStatus == AutoUpdater.UpdateStatus.READY_TO_INSTALL) {
+            // Restart button
+            boolean restartHovered = mouseX >= contentX && mouseX < contentX + 100 && mouseY >= y && mouseY < y + 14;
+            ctx.fill(contentX, y, contentX + 100, y + 14, restartHovered ? 0xFFFFCC00 : 0xFFFFAA00);
+            ctx.drawTextWithShadow(textRenderer, Text.literal("Restart Game"), contentX + 16, y + 3, 0xFF000000);
+        }
+        
+        y += 20;
+        
         // Stats section
         ctx.drawTextWithShadow(textRenderer, Text.literal("--- Session Stats ---"), contentX, y, ACCENT_COLOR);
         y += 12;
         
-        SpawnerDefenseBot bot = SpawnerDefenseBot.getInstance();
+        Keeper bot = Keeper.getInstance();
         long totalSpawners = config.totalSpawnersMined + bot.sessionSpawnersMined;
         long totalShulkers = config.totalShulkersPacked + bot.sessionShulkersPacked;
         long totalTime = config.totalMiningTimeMs + bot.sessionMiningTime;
@@ -705,8 +749,34 @@ public class ConfigScreen extends Screen {
             return true;
         }
         
-        // Reset stats button
-        int resetY = y + 20 + 12 + 10 + 10 + 10 + 14;
+        y += 20; // After website/github buttons
+        y += 12; // "--- Updates ---" header
+        y += 10; // Current version
+        y += 14; // Status message
+        
+        // Update action buttons
+        AutoUpdater.UpdateStatus updateStatus = AutoUpdater.getStatus();
+        if (mouseX >= contentX && mouseX < contentX + 100 && mouseY >= y && mouseY < y + 14) {
+            if (updateStatus == AutoUpdater.UpdateStatus.UP_TO_DATE || 
+                updateStatus == AutoUpdater.UpdateStatus.ERROR) {
+                // Check for updates
+                AutoUpdater.checkForUpdates();
+                return true;
+            } else if (updateStatus == AutoUpdater.UpdateStatus.UPDATE_AVAILABLE) {
+                // Download update
+                AutoUpdater.downloadAndInstall();
+                return true;
+            } else if (updateStatus == AutoUpdater.UpdateStatus.READY_TO_INSTALL) {
+                // Restart game
+                AutoUpdater.restartGame();
+                return true;
+            }
+        }
+        
+        y += 20; // After update buttons
+        
+        // Reset stats button (adjusted position)
+        int resetY = y + 12 + 10 + 10 + 10 + 14;
         if (mouseX >= contentX && mouseX < contentX + 70 && mouseY >= resetY && mouseY < resetY + 14) {
             config.totalSpawnersMined = 0;
             config.totalShulkersPacked = 0;

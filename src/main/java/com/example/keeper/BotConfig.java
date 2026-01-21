@@ -1,4 +1,4 @@
-package com.example.spawnerdefensebot;
+package com.example.keeper;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -73,6 +73,11 @@ public class BotConfig {
     
     // Rendering
     public boolean pathRenderingEnabled = true;
+    
+    // Auto-update
+    public boolean autoUpdateCheck = true;
+    public boolean autoDownloadUpdates = false;
+    public boolean notifyOnUpdate = true;
     
     // Stats
     public long totalSpawnersMined = 0;
